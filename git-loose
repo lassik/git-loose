@@ -1,0 +1,40 @@
+#!/bin/sh
+set -eu
+
+million=1000000
+
+g() {
+        echo "git $*"
+        git "$@"
+}
+
+g fsck
+
+g config --local core.multiPackIndex false
+g config --local core.useReplaceRefs false
+g config --local gc.packRefs false
+g config --local repack.useDeltaBaseOffset false
+
+g config --local core.bigFileThreshold 0
+g config --local core.compression 0
+g config --local core.looseCompression 0
+g config --local gc.aggressiveDepth 0
+g config --local gc.aggressiveWindow 0
+g config --local gc.auto 0
+g config --local gc.autoPackLimit 0
+g config --local gc.bigPackThreshold 0
+g config --local pack.compression 0
+g config --local pack.depth 0
+g config --local pack.window 0
+
+g config --local fetch.unpackLimit "$million"
+g config --local receive.unpackLimit "$million"
+g config --local transfer.unpackLimit "$million"
+
+pack_dir="$(git rev-parse --git-path objects/pack)"
+for pack_file in $(find "$pack_dir" -type f -name '*.pack'); do
+        g unpack-objects <"$pack_file"
+        #rm -f "$pack_file"
+done
+
+g fsck
